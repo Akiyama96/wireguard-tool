@@ -1,4 +1,4 @@
-module wireguard-tool
+module github.com/Akiyama96/wireguard-tool
 
 go 1.21.1
 
