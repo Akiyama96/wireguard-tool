@@ -5,5 +5,8 @@ import (
 )
 
 func TestCheck(t *testing.T) {
-	GetInfo()
+	_, err := GetInfo()
+	if err != nil {
+		t.Log(err)
+	}
 }

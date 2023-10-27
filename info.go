@@ -8,29 +8,32 @@ import (
 	"strings"
 )
 
-type NetInterface struct {
-	name       string
-	address    string
-	privateKet string
-	publicKey  string
-	listenPort int
-	peers      []*Peer
-}
+type Permission string
 
-type Peer struct {
-	publicKey       string
-	allowIps        string
-	endPoint        string
-	latestHandshake string
-}
+const (
+	PERMISSION_DEFAULT Permission = "default"
+	PERMISSION_SUDO    Permission = "root"
+)
 
 // GetInfo Get wireguard Info
-func GetInfo() ([]*NetInterface, error) {
-	cmd := exec.Command("sudo", "wg")
+func GetInfo(permission ...Permission) ([]*NetInterface, error) {
+	if len(permission) == 0 {
+		permission = append(permission, PERMISSION_DEFAULT)
+	}
+
+	var cmd *exec.Cmd
+	switch permission[0] {
+	case PERMISSION_DEFAULT:
+		cmd = exec.Command("wg")
+	case PERMISSION_SUDO:
+		cmd = exec.Command("sudo", "wg")
+	default:
+		return nil, fmt.Errorf("permission error")
+	}
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get wireguard info error: %s, %s", err.Error(), string(out))
 	}
 
 	outString := string(out)
@@ -88,24 +91,21 @@ func parseNetInterfaceInfo(in string) (*NetInterface, error) {
 	netInterface.name = infos[0]
 	infos = append(infos[:0], infos[1:]...)
 
-	interfacesList, err := net.Interfaces()
+	interfaces, err := net.InterfaceByName(netInterface.name)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, interfaces := range interfacesList {
-		if interfaces.Name == netInterface.name {
-			addresses, err := interfaces.Addrs()
-			if err != nil {
-				return nil, err
-			}
+	addresses, err := interfaces.Addrs()
+	if err != nil {
+		return nil, err
+	}
 
-			for _, addr := range addresses {
-				netInterface.address = addr.String()
-				break
-			}
-
-			break
+	for i, addr := range addresses {
+		if i > 0 {
+			netInterface.address += "," + addr.String()
+		} else {
+			netInterface.address = addr.String()
 		}
 	}
 
@@ -129,7 +129,7 @@ func parseNetInterfaceInfo(in string) (*NetInterface, error) {
 		case "publickey":
 			netInterface.publicKey = content
 		case "privatekey":
-			netInterface.privateKet = content
+			netInterface.privateKey = content
 		case "listeningport":
 			netInterface.listenPort = cast.ToInt(content)
 		}
