@@ -2,10 +2,14 @@
 A golang WireGuard tool 
 
 ## Usage
-GetInfo() or NewNetInterface()
-⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇
-AddPeer() or DeletePeer()
-⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇
-Apply() or Down()
+GetInfo() or NewNetInterface() <br>
+<br>
+⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ <br>
+<br>
+AddPeer() or DeletePeer() <br>
+<br>
+⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ <br>
+<br>
+Apply() or Down() <br>
 
 
