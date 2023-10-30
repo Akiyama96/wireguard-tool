@@ -15,6 +15,71 @@ const (
 	PERMISSION_SUDO    Permission = "root"
 )
 
+// GetInfoWithFilter Get wireguard Info with filter
+func GetInfoWithFilter(filter string, permission ...Permission) ([]*NetInterface, error) {
+	if len(permission) == 0 {
+		permission = append(permission, PERMISSION_DEFAULT)
+	}
+
+	var cmd *exec.Cmd
+	switch permission[0] {
+	case PERMISSION_DEFAULT:
+		cmd = exec.Command("wg", "show", filter)
+	case PERMISSION_SUDO:
+		cmd = exec.Command("sudo", "wg", "show", filter)
+	default:
+		return nil, fmt.Errorf("permission error")
+	}
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("get wireguard info error: %s, %s", err.Error(), string(out))
+	}
+
+	outString := string(out)
+
+	netInterfacesString := strings.Split(outString, "interface:")
+
+	var netInterfaces = make([]*NetInterface, 0)
+	for _, netInterfaceString := range netInterfacesString {
+		netInterfaceString = strings.ReplaceAll(netInterfaceString, " ", "")
+		if netInterfaceString == "" {
+			continue
+		}
+
+		peersString := strings.Split(netInterfaceString, "peer:")
+		if len(peersString) <= 0 {
+			continue
+		}
+
+		netInterfaceInfoString := peersString[0]
+		peersString = append(peersString[:0], peersString[1:]...)
+
+		// parse net interface info from string
+		netInterface, err := parseNetInterfaceInfo(netInterfaceInfoString)
+		if err != nil {
+			continue
+		}
+
+		var peers = make([]*Peer, 0)
+		// parse net interfaces peers info from string
+		for _, peerString := range peersString {
+			peer, err := parsePeerInfo(peerString)
+			if err != nil {
+				continue
+			}
+
+			peers = append(peers, peer)
+		}
+
+		netInterface.peers = peers
+
+		netInterfaces = append(netInterfaces, netInterface)
+	}
+
+	return netInterfaces, nil
+}
+
 // GetInfo Get wireguard Info
 func GetInfo(permission ...Permission) ([]*NetInterface, error) {
 	if len(permission) == 0 {

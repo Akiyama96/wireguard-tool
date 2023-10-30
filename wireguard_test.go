@@ -9,4 +9,9 @@ func TestCheck(t *testing.T) {
 	if err != nil {
 		t.Log(err)
 	}
+
+	_, err = GetInfoWithFilter("utun5", PERMISSION_SUDO)
+	if err != nil {
+		t.Log(err)
+	}
 }
